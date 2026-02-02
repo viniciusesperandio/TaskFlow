@@ -88,8 +88,6 @@ services:
       - prometheus_data:/prometheus
     networks:
       - taskflow-network
-    depends_on:
-      - taskflow-api
     restart: unless-stopped
 
   # ═══════════════════════════════════════════════════════════════════════════
@@ -135,49 +133,6 @@ services:
       - taskflow-network
     depends_on:
       postgres:
-        condition: service_healthy
-    restart: unless-stopped
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # TASKFLOW API - Aplicação Principal
-  # ═══════════════════════════════════════════════════════════════════════════
-  taskflow-api:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
-    container_name: taskflow-api
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_HTTP_PORTS: 8080
-      
-      # Database
-      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=taskflow;Username=postgres;Password=postgres123"
-      
-      # RabbitMQ
-      RabbitMQ__Host: rabbitmq
-      RabbitMQ__Port: 5672
-      RabbitMQ__Username: admin
-      RabbitMQ__Password: admin123
-      RabbitMQ__VirtualHost: /
-      
-      # Redis
-      Redis__Configuration: "redis:6379,password=redis123"
-      
-      # JWT
-      Jwt__Secret: "super-secret-key-change-in-production-min-32-chars"
-      Jwt__Issuer: "TaskFlow"
-      Jwt__Audience: "TaskFlowApi"
-      Jwt__ExpirationInMinutes: 60
-    ports:
-      - "5000:8080"
-    networks:
-      - taskflow-network
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     restart: unless-stopped
 
