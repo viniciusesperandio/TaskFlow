@@ -1,0 +1,91 @@
+groups:
+  - name: taskflow_alerts
+    interval: 30s
+    rules:
+      # API Health Alert
+      - alert: APIDown
+        expr: up{job="taskflow-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "TaskFlow API está indisponível"
+          description: "A API TaskFlow não está respondendo há mais de 1 minuto."
+
+      # High Error Rate
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "Taxa de erros alta na API"
+          description: "Taxa de erros 5xx acima de 5% nos últimos 5 minutos."
+
+      # High Response Time
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "Tempo de resposta alto"
+          description: "95% das requisições estão demorando mais de 1 segundo."
+
+      # Database Connection Issues
+      - alert: DatabaseConnectionIssues
+        expr: up{job="postgres"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "Banco de dados indisponível"
+          description: "PostgreSQL não está respondendo há mais de 2 minutos."
+
+      # RabbitMQ Down
+      - alert: RabbitMQDown
+        expr: up{job="rabbitmq"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: messaging
+        annotations:
+          summary: "RabbitMQ indisponível"
+          description: "RabbitMQ não está respondendo há mais de 2 minutos."
+
+      # RabbitMQ Queue Size
+      - alert: RabbitMQHighQueueSize
+        expr: rabbitmq_queue_messages > 1000
+        for: 10m
+        labels:
+          severity: warning
+          component: messaging
+        annotations:
+          summary: "Fila do RabbitMQ muito grande"
+          description: "Fila {{ $labels.queue }} tem mais de 1000 mensagens pendentes."
+
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: process_resident_memory_bytes{job="taskflow-api"} > 500000000
+        for: 10m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "Uso alto de memória"
+          description: "A API está usando mais de 500MB de memória."
+
+      # High CPU Usage (opcional - requer node_exporter)
+      # - alert: HighCPUUsage
+      #   expr: rate(process_cpu_seconds_total{job="taskflow-api"}[5m]) > 0.8
+      #   for: 10m
+      #   labels:
+      #     severity: warning
+      #     component: api
+      #   annotations:
+      #     summary: "Uso alto de CPU"
+      #     description: "A API está usando mais de 80% de CPU."
